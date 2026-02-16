@@ -11,6 +11,9 @@ const products = () => {
   const [error,setError] = useState(null)
   const [submitting,setSubmitting] = useState(false)
   const [formError,setFormError] = useState("")
+  const [successMessage,setSuccessMessage] = useState("")
+  const [showSuccessMessage,setShowSuccessMessage] = useState(false)
+  const [editingProduct,setEditingProduct] = useState(null)
 
 
 useEffect(() => {
@@ -30,7 +33,7 @@ useEffect(() => {
   fetchProducts()
 },[])
 
-const handleAddproducts = async (e) => {
+const handleSubmit = async (e) => {
   e.preventDefault()
   setFormError("")
   if(!title.trim()){
@@ -60,22 +63,50 @@ const handleAddproducts = async (e) => {
 
  setSubmitting(true)
  try {
-  const response = await fetch("https://fakestoreapi.com/products",{
+  let response;
+  let updatedProducts;
+
+  if(editingProduct) {
+   const url = `https://fakestoreapi.com/products/${editingProduct.id}`
+   response = await fetch(url,{
+    method: "PUT",
+    headers:{
+      "content-type":"application/json"
+
+    },
+    Body:JSON.stringify(newProducts)
+   })
+   if(!response.ok) throw new Error("failed to update product")
+    updatedProducts = await response.json()
+  
+  setProducts((prevProducts) => prevProducts.map((product) => product.Id === editingProduct ? updatedProducts : product))
+  console.log(editingProduct)
+ alert("Product updated successfully")
+ setTitle(""),
+ setDescription(""),
+ setPrice(""),
+ setImageUrl("")
+  } else {
+     
+  response = await fetch("https://fakestoreapi.com/products",{
     method:"POST",
     headers: {
       "content-type": "application/json"
     },
     body:JSON.stringify(newProducts)
-  })
+  })  
  if(!response.ok) throw new Error("failed to add products")
-  const simulatedResponse = await response.json()
+updatedProducts = await response.json()
 
- setProducts((prevProducts) => [simulatedResponse, ...prevProducts])
+ setProducts((prevProducts) => [updatedProducts, ...prevProducts])
+ alert("Product added successfully")
 
  setTitle(""),
  setDescription(""),
  setPrice(""),
  setImageUrl("")
+ setEditingProduct(null)
+  }
 
  } catch (error){
   setFormError(error.message)
@@ -83,7 +114,24 @@ const handleAddproducts = async (e) => {
   setSubmitting(false)
  }
 }
+const handleDelete = async(id) => {
+if(!window.confirm("Are you sure you want to delete this product?")) return;
 
+setSubmitting(true)
+
+try{
+const response = await fetch(`https://fakestoreapi.com/products/${id}`,{
+  method:"DELETE"
+}) 
+if(!response.ok) throw new Error("failed to delete product")
+  setProducts((prevProducts) =>prevProducts.filter((product) => product.id !== id))
+alert("Product deleted successfully")
+}catch(error) {
+  setError(error.message)
+} finally {
+  setSubmitting(false)
+}
+}
 if(isLoading) return <div className='text-center p-8'>Loading products...</div>
 if(error) return <div className='text-center p-8 text-red-600'>{error}</div>
 
@@ -95,11 +143,11 @@ if(error) return <div className='text-center p-8 text-red-600'>{error}</div>
       </h1>
       {/* ─── ADD PRODUCT FORM ─── */}
       <div className="bg-white p-6 rounded-lg shadow-md mb-20">
-        <h2 className="text-2xl font-semibold mb-4">Add New Product</h2>
+        <h2 className="text-3xl font-semibold mb-4 text-center">{editingProduct ? "Edit product" :"Add product"}</h2>
 
-        <form   onSubmit = {handleAddproducts} className="space-y-4">
+        <form   onSubmit = {handleSubmit} className="space-y-4">
 
-          {/* Title input */}
+          
           <div>
             <label className="block text-sm font-medium mb-1">Title *</label>
             <input
@@ -111,7 +159,7 @@ if(error) return <div className='text-center p-8 text-red-600'>{error}</div>
             />
           </div>
 
-          {/* Price input */}
+          
           <div>
             <label className="block text-sm font-medium mb-1">Price ($) *</label>
             <input
@@ -125,7 +173,7 @@ if(error) return <div className='text-center p-8 text-red-600'>{error}</div>
             />
           </div>
 
-          {/* Description textarea */}
+          
           <div>
             <label className="block text-sm font-medium mb-1">Description</label>
             <textarea
@@ -136,7 +184,7 @@ if(error) return <div className='text-center p-8 text-red-600'>{error}</div>
             />
           </div>
 
-          {/* Image URL input */}
+          
           <div>
             <label className="block text-sm font-medium mb-1">Image URL *</label>
             <input
@@ -153,6 +201,18 @@ if(error) return <div className='text-center p-8 text-red-600'>{error}</div>
           {formError && <p className="text-red-600 text-sm">{formError}</p>}
 
           {/* Submit button – changes text/color when submitting */}
+
+        {editingProduct &&(  <button onClick={() => {
+            setEditingProduct(null)
+            setTitle("")
+            setDescription("")
+            setPrice("")
+            setImageUrl("")
+            setFormError("")
+            
+          }}
+          className="w-full py-3 px-4 bg-gray-600 text-white font-semibold rounded hover:bg-gray-700 transition mb-2"
+          >cancel Edit</button>)}
           <button
             type="submit"
             disabled={submitting}
@@ -160,7 +220,7 @@ if(error) return <div className='text-center p-8 text-red-600'>{error}</div>
               submitting ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
-            {submitting ? 'Adding...' : 'Add Product'}
+            {submitting ? 'saving...' : (editingProduct ? "update Product" : 'Add Product')}
           </button>
         </form>
       </div>
@@ -172,7 +232,7 @@ if(error) return <div className='text-center p-8 text-red-600'>{error}</div>
             key={product.id}   // very important for React list performance
             className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow border-2 border-gray-200"
           >
-            {/* Product image – fallback if URL is broken */}
+            
             <img
               src={product.image}
               alt={product.title}
@@ -196,6 +256,21 @@ if(error) return <div className='text-center p-8 text-red-600'>{error}</div>
                 <span className="text-xs bg-gray-200 px-2 py-1 rounded">
                   {product.category || 'custom'}
                 </span>
+              </div>
+              <div className="mt-5 flex justify-between space-x-2">
+                <button onClick={() => {
+                  setEditingProduct(product)
+                  setTitle(product.title)
+                   setPrice(product.price.toString())
+                  setDescription(product.description)
+                  setImageUrl(product.imageUrl)
+                 
+                }}
+                className='bg-blue-600 p-3 text-white rounded-lg font-semibold'
+                >Edit</button>
+                <button 
+                onClick={() => handleDelete(product.id)}
+                className='bg-red-600 text-white p-3 rounded-lg font-semibold'>Delete</button>
               </div>
             </div>
           </div>
