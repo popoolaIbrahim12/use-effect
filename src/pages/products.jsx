@@ -82,7 +82,7 @@ const Products = () => {  // ← renamed to Products (capital P – convention)
           ...editingProduct,           // keep id, rating, etc.
           ...productData,              // override changed fields
         };
-
+        
         setProducts((prev) =>
           prev.map((p) =>
             p.id === editingProduct.id ? updatedProduct : p
