@@ -271,13 +271,13 @@ const Products = () => {  // ← renamed to Products (capital P – convention)
                     setDescription(product.description || "");
                     setImageUrl(product.image);           // ← fixed: .image not .imageUrl
                   }}
-                  className="bg-blue-600 p-3 text-white rounded-lg font-semibold flex-1"
+                  className="bg-blue-600 p-3 text-white rounded-lg font-semibold flex-1 cursor-pointer"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => handleDelete(product.id)}
-                  className="bg-red-600 text-white p-3 rounded-lg font-semibold flex-1"
+                  className="bg-red-600 text-white p-3 rounded-lg font-semibold flex-1 cursor-pointer"
                 >
                   Delete
                 </button>
